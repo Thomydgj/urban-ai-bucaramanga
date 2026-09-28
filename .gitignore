@@ -41,3 +41,8 @@ data/processed/
 # Temporary
 tmp/
 temp/
+
+# Geospatial data
+data/raw/*
+data/interim/*
+data/processed/*
