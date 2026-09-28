@@ -1,0 +1,43 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+npm-debug.log*
+dist/
+build/
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Machine Learning
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# Data
+data/raw/
+data/processed/
+
+# Logs
+*.log
+
+# Temporary
+tmp/
+temp/
