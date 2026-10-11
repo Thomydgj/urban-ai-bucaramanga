@@ -1,0 +1,52 @@
+{
+  "image": "22.png",
+  "split": "Train/Rural",
+  "device": "cuda",
+  "valid_pixels": 1048576,
+  "ignored_pixels": 0,
+  "miou_over_classes_with_nonzero_union": 0.5082457662809573,
+  "evaluated_classes": 3,
+  "classes": {
+    "vegetacion": {
+      "iou": 0.26551030316995294,
+      "dice": 0.41960986410759543,
+      "intersection_pixels": 129055,
+      "union_pixels": 486064,
+      "predicted_pixels": 297636,
+      "reference_pixels": 317483,
+      "reference_proportion": 0.30277538299560547,
+      "prediction_proportion": 0.2838478088378906
+    },
+    "construido": {
+      "iou": 0.7856302521008404,
+      "dice": 0.8799472916372535,
+      "intersection_pixels": 158933,
+      "union_pixels": 202300,
+      "predicted_pixels": 169478,
+      "reference_pixels": 191755,
+      "reference_proportion": 0.18287181854248047,
+      "prediction_proportion": 0.16162681579589844
+    },
+    "vias": {
+      "iou": null,
+      "dice": null,
+      "intersection_pixels": 0,
+      "union_pixels": 0,
+      "predicted_pixels": 0,
+      "reference_pixels": 0,
+      "reference_proportion": 0.0,
+      "prediction_proportion": 0.0
+    },
+    "otros": {
+      "iou": 0.4735967435720784,
+      "dice": 0.6427765881513204,
+      "intersection_pixels": 360212,
+      "union_pixels": 760588,
+      "predicted_pixels": 581462,
+      "reference_pixels": 539338,
+      "reference_proportion": 0.5143527984619141,
+      "prediction_proportion": 0.5545253753662109
+    }
+  },
+  "warning": "Esta imagen pertenece a Train/Rural. Es una evaluación de diagnóstico sobre una imagen de entrenamiento, no una evaluación independiente ni el mIoU oficial de validación."
+}
