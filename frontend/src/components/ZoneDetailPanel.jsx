@@ -1,3 +1,4 @@
+
 import {
   Activity,
   AlertTriangle,
@@ -7,178 +8,74 @@ import {
   X,
 } from "lucide-react";
 
-
-/* =========================================================
-   FORMATEAR VALORES
-========================================================= */
-
-function formatValue(
-  value,
-  decimals = 3
-) {
-
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
+function formatValue(value, decimals = 3) {
+  if (value === null || value === undefined || value === "") {
     return "—";
   }
 
-
-  if (
-    typeof value === "number"
-  ) {
-    return value.toFixed(
-      decimals
-    );
+  if (typeof value === "number") {
+    return value.toFixed(decimals);
   }
 
-
-  return String(
-    value
-  );
-
+  return String(value);
 }
 
+function firstAvailable(properties, keys) {
+  for (const key of keys) {
+    const value = properties?.[key];
 
-/* =========================================================
-   FILA DE INFORMACIÓN
-========================================================= */
+    if (value !== undefined && value !== null && value !== "") {
+      return value;
+    }
+  }
 
-function InfoRow({
-  label,
-  value,
-}) {
-
-  return (
-
-    <div className="zone-detail-row">
-
-      <span className="zone-detail-label">
-        {label}
-      </span>
-
-
-      <span className="zone-detail-value">
-        {value}
-      </span>
-
-    </div>
-
-  );
-
+  return null;
 }
 
-
-/* =========================================================
-   PANEL DE DETALLE DE ZONA
-========================================================= */
-
-export default function ZoneDetailPanel({
-  zone,
-  onClose,
-}) {
-
-  /*
-   * Si no existe una zona seleccionada,
-   * no mostramos el panel.
-   */
-
+export default function ZoneDetailPanel({ zone, onClose }) {
   if (!zone) {
     return null;
   }
 
+  const properties = zone.properties || {};
 
-  const properties =
-    zone.properties || {};
+  const zoneId = properties.zone_id ?? "—";
+  const level = properties.intervention_level ?? "—";
 
+  const lst = firstAvailable(properties, [
+    "LST",
+    "lst",
+    "lst_mean",
+    "mean_lst",
+    "lst_celsius",
+    "lst_mean_c",
+    "land_surface_temperature",
+    "temperature_lst",
+  ]);
 
-  /* =======================================================
-     IDENTIFICACIÓN
-  ======================================================== */
+  const ndvi = firstAvailable(properties, [
+    "NDVI",
+    "ndvi",
+    "ndvi_mean",
+    "mean_ndvi",
+  ]);
 
-  const zoneId =
-    properties.zone_id ?? "—";
+  const ndbi = firstAvailable(properties, [
+    "NDBI",
+    "ndbi",
+    "ndbi_mean",
+    "mean_ndbi",
+  ]);
 
-
-  const level =
-    properties.intervention_level ?? "—";
-
-
-  /* =======================================================
-     CLASIFICACIÓN DE INTERVENCIÓN
-  ======================================================== */
-
-  const interventionType =
-    properties.intervention_type ?? "—";
-
-
-  const condition =
-    properties.dominant_condition ?? "—";
-
-
-  const timeframe =
-    properties.priority_timeframe ?? "—";
-
-
-  /* =======================================================
-     INDICADORES
-  ======================================================== */
-
-  const probability =
-    properties.mean_probability;
-
-
-  const hotspotScore =
-    properties.hotspot_score;
-
-
-  const operationalScore =
-    properties.operational_score;
-
-
-  /* =======================================================
-     INFORMACIÓN TERRITORIAL
-  ======================================================== */
-
-  const areaHa =
-    properties.area_ha;
-
-
-  const observations =
-    properties.observation_count ??
-    properties.observations;
-
-
-  const rank =
-    properties.operational_rank;
-
+  const rank = properties.operational_rank;
 
   return (
-
     <aside className="zone-detail-panel">
-
-
-      {/* ===================================================
-          HEADER
-      ==================================================== */}
-
       <div className="zone-detail-header">
-
         <div>
-
-          <p className="section-label">
-            ZONA SELECCIONADA
-          </p>
-
-
-          <h3>
-            {zoneId}
-          </h3>
-
+          <p className="section-label">ZONA SELECCIONADA</p>
+          <h3>{zoneId}</h3>
         </div>
-
 
         <button
           type="button"
@@ -186,271 +83,82 @@ export default function ZoneDetailPanel({
           onClick={onClose}
           aria-label="Cerrar detalle"
         >
-
           <X size={17} />
-
         </button>
-
       </div>
-
-
-      {/* ===================================================
-          NIVEL DE INTERVENCIÓN
-      ==================================================== */}
 
       <div className="zone-detail-level">
-
-        <AlertTriangle
-          size={17}
-        />
-
+        <AlertTriangle size={17} />
 
         <div>
-
-          <span>
-            Nivel de intervención
-          </span>
-
-
-          <strong>
-            {level}
-          </strong>
-
+          <span>Nivel de intervención</span>
+          <strong>{level}</strong>
         </div>
-
       </div>
-
-
-      {/* ===================================================
-          INDICADORES
-      ==================================================== */}
 
       <div className="zone-detail-section">
-
         <div className="zone-detail-section-title">
-
-          <BarChart3
-            size={15}
-          />
-
-          Indicadores
-
+          <BarChart3 size={15} />
+          Indicadores ambientales
         </div>
 
-
-        <div className="zone-detail-metrics">
-
-
-          {/* PROBABILIDAD */}
-
-          <div className="zone-metric">
-
-            <span>
-              Probabilidad
-            </span>
-
-
-            <strong>
-              {formatValue(
-                probability
-              )}
-            </strong>
-
-          </div>
-
-
-          {/* HOTSPOT */}
-
-          <div className="zone-metric">
-
-            <span>
-              Hotspot
-            </span>
-
-
-            <strong>
-              {formatValue(
-                hotspotScore
-              )}
-            </strong>
-
-          </div>
-
-
-          {/* OPERATIONAL */}
-
-          <div className="zone-metric">
-
-            <span>
-              Operational
-            </span>
-
-
-            <strong>
-              {formatValue(
-                operationalScore
-              )}
-            </strong>
-
-          </div>
-
-
-          {/* RANKING */}
-
-          <div className="zone-metric">
-
-            <span>
-              Ranking
-            </span>
-
-
-            <strong>
-              {formatValue(
-                rank,
-                0
-              )}
-            </strong>
-
-          </div>
-
+        <div className="zone-environmental-intro">
+          <span>LECTURA AMBIENTAL</span>
+          <p>
+            Indicadores satelitales para comprender temperatura,
+            vegetación y superficie construida.
+          </p>
         </div>
 
+        <div className="zone-detail-metrics zone-environmental-metrics">
+          <div className="zone-metric zone-metric-lst">
+            <div className="zone-metric-icon">
+              <Activity size={17} />
+            </div>
+            <span className="zone-metric-code">LST</span>
+            <strong>
+              {lst === null ? "Sin dato" : formatValue(lst, 2)}
+            </strong>
+            <small>Temperatura superficial</small>
+          </div>
+
+          <div className="zone-metric zone-metric-ndvi">
+            <div className="zone-metric-icon">
+              <Trees size={17} />
+            </div>
+            <span className="zone-metric-code">NDVI</span>
+            <strong>
+              {ndvi === null ? "Sin dato" : formatValue(ndvi, 3)}
+            </strong>
+            <small>Índice de vegetación</small>
+          </div>
+
+          <div className="zone-metric zone-metric-ndbi">
+            <div className="zone-metric-icon">
+              <MapPin size={17} />
+            </div>
+            <span className="zone-metric-code">NDBI</span>
+            <strong>
+              {ndbi === null ? "Sin dato" : formatValue(ndbi, 3)}
+            </strong>
+            <small>Superficie construida</small>
+          </div>
+
+          <div className="zone-metric zone-metric-rank">
+            <div className="zone-metric-icon">
+              <BarChart3 size={17} />
+            </div>
+            <span className="zone-metric-code">Ranking</span>
+            <strong>{formatValue(rank, 0)}</strong>
+            <small>Posición de prioridad</small>
+          </div>
+        </div>
       </div>
-
-
-      {/* ===================================================
-          INFORMACIÓN TERRITORIAL
-      ==================================================== */}
-
-      <div className="zone-detail-section">
-
-        <div className="zone-detail-section-title">
-
-          <MapPin
-            size={15}
-          />
-
-          Información territorial
-
-        </div>
-
-
-        <div className="zone-detail-list">
-
-
-          {/* ÁREA */}
-
-          <InfoRow
-            label="Área"
-            value={
-              areaHa !== undefined &&
-              areaHa !== null
-                ? `${formatValue(
-                    areaHa,
-                    2
-                  )} ha`
-                : "—"
-            }
-          />
-
-
-          {/* OBSERVACIONES */}
-
-          <InfoRow
-            label="Observaciones"
-            value={
-              observations !== undefined &&
-              observations !== null
-                ? formatValue(
-                    observations,
-                    0
-                  )
-                : "—"
-            }
-          />
-
-
-          {/* CONDICIÓN */}
-
-          <InfoRow
-            label="Condición dominante"
-            value={
-              condition
-            }
-          />
-
-        </div>
-
-      </div>
-
-
-      {/* ===================================================
-          INTERVENCIÓN
-      ==================================================== */}
-
-      <div className="zone-detail-section">
-
-        <div className="zone-detail-section-title">
-
-          <Trees
-            size={15}
-          />
-
-          Intervención
-
-        </div>
-
-
-        <div className="zone-detail-list">
-
-
-          {/* TIPO */}
-
-          <InfoRow
-            label="Tipo"
-            value={
-              interventionType
-            }
-          />
-
-
-          {/* PLAZO */}
-
-          <InfoRow
-            label="Plazo"
-            value={
-              timeframe
-            }
-          />
-
-        </div>
-
-      </div>
-
-
-      {/* ===================================================
-          FOOTER
-      ==================================================== */}
 
       <div className="zone-detail-footer">
-
-        <Activity
-          size={14}
-        />
-
-
-        <span>
-
-          Datos provenientes del motor
-          de análisis urbano.
-
-        </span>
-
+        <Activity size={14} />
+        <span>Datos provenientes del motor de análisis urbano.</span>
       </div>
-
-
     </aside>
-
   );
-
 }

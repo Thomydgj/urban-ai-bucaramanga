@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { LocateFixed } from "lucide-react";
 
 import {
   MapContainer,
@@ -93,6 +94,26 @@ function getZoneStyle(feature) {
 /* =========================================================
    CONTROLADOR DE VISTA
 ========================================================= */
+
+function RecenterControl() {
+  const map = useMap();
+
+  return (
+    <button
+      type="button"
+      title="Centrar en Bucaramanga"
+      aria-label="Centrar mapa en Bucaramanga"
+      className="map-recenter-control"
+      onClick={(event) => {
+        event.stopPropagation();
+        map.setView(DEFAULT_CENTER, DEFAULT_ZOOM, { animate: true });
+      }}
+    >
+      <LocateFixed size={20} />
+    </button>
+  );
+}
+
 
 function MapController({
   geojson,
@@ -199,49 +220,23 @@ function createPopup(
 
   layer.bindPopup(`
 
-    <div style="
-      min-width:230px;
-      font-family:
-        Inter,
-        system-ui,
-        sans-serif;
-    ">
+    <div class="map-popup">
 
-      <div style="
-        font-size:10px;
-        font-weight:700;
-        letter-spacing:.08em;
-        color:#6b7280;
-        margin-bottom:5px;
-      ">
+      <div class="map-popup-eyebrow">
         ZONA DE INTERVENCIÓN
       </div>
 
 
-      <div style="
-        font-size:18px;
-        font-weight:700;
-        color:#18231d;
-        margin-bottom:14px;
-      ">
+      <div class="map-popup-title">
         ${zoneId}
       </div>
 
 
-      <div style="
-        display:grid;
-        grid-template-columns:1fr 1fr;
-        gap:10px;
-        font-size:12px;
-        color:#374151;
-      ">
+      <div class="map-popup-metrics">
 
         <div>
 
-          <div style="
-            color:#7a857e;
-            font-size:10px;
-          ">
+          <div class="map-popup-label">
             Ranking
           </div>
 
@@ -254,10 +249,7 @@ function createPopup(
 
         <div>
 
-          <div style="
-            color:#7a857e;
-            font-size:10px;
-          ">
+          <div class="map-popup-label">
             Nivel
           </div>
 
@@ -270,10 +262,7 @@ function createPopup(
 
         <div>
 
-          <div style="
-            color:#7a857e;
-            font-size:10px;
-          ">
+          <div class="map-popup-label">
             Probabilidad
           </div>
 
@@ -293,10 +282,7 @@ function createPopup(
 
         <div>
 
-          <div style="
-            color:#7a857e;
-            font-size:10px;
-          ">
+          <div class="map-popup-label">
             Operational
           </div>
 
@@ -316,23 +302,12 @@ function createPopup(
       </div>
 
 
-      <hr style="
-        margin:14px 0;
-        border:0;
-        border-top:1px solid #e5e7eb;
-      "/>
+      <hr class="map-popup-divider" />
 
 
-      <div style="
-        font-size:12px;
-        line-height:1.5;
-        color:#374151;
-      ">
+      <div class="map-popup-details">
 
-        <div style="
-          color:#7a857e;
-          font-size:10px;
-        ">
+        <div class="map-popup-label">
           Condición dominante
         </div>
 
@@ -341,11 +316,7 @@ function createPopup(
         </strong>
 
 
-        <div style="
-          margin-top:10px;
-          color:#7a857e;
-          font-size:10px;
-        ">
+        <div class="map-popup-label map-popup-label-spaced">
           Tipo de intervención
         </div>
 
@@ -508,6 +479,9 @@ export default function InterventionMap({
           "
 
         />
+
+
+        <RecenterControl />
 
 
         {/* =================================================

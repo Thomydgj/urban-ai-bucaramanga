@@ -1,3 +1,4 @@
+
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL ||
   "http://127.0.0.1:8000"
@@ -24,18 +25,54 @@ async function request(
 
   if (!response.ok) {
     let message = "";
+    let bodyText = "";
 
     try {
-      const body = await response.json();
+      bodyText = await response.text();
 
-      message = body?.detail
-        ? String(body.detail)
-        : body?.message
-          ? String(body.message)
-          : JSON.stringify(body);
-    } catch {
+      if (bodyText) {
+        let body;
+
+        try {
+          body = JSON.parse(bodyText);
+        } catch {
+          body = null;
+        }
+
+        const detail =
+          body?.detail ??
+          body?.message ??
+          body?.error;
+
+        if (typeof detail === "string") {
+          message = detail;
+        } else if (
+          detail !== null &&
+          detail !== undefined
+        ) {
+          message = JSON.stringify(detail, null, 2);
+        } else if (body !== null) {
+          message = JSON.stringify(body, null, 2);
+        } else {
+          message = bodyText;
+        }
+      }
+    } catch (error) {
+      message =
+        error instanceof Error
+          ? error.message
+          : String(error);
+    }
+
+    if (!message) {
       message = `La solicitud falló con HTTP ${response.status}.`;
     }
+
+    console.error("Error HTTP de la API:", {
+      status: response.status,
+      url: `${baseUrl}${path}`,
+      response: bodyText || message
+    });
 
     throw new Error(
       `Error HTTP ${response.status}: ${message}`
@@ -83,30 +120,8 @@ export async function getMap(filters = undefined) {
   );
 }
 
-export async function getZones(filters = undefined) {
-  return request(
-    `/api/zones${buildQuery(filters)}`
-  );
-}
-
 export async function getFilterOptions() {
   return request("/api/filters");
-}
-
-export async function getZone(zoneId) {
-  if (
-    zoneId === null ||
-    zoneId === undefined ||
-    zoneId === ""
-  ) {
-    throw new Error(
-      "Debes indicar el identificador de la zona."
-    );
-  }
-
-  return request(
-    `/api/zones/${encodeURIComponent(zoneId)}`
-  );
 }
 
 /* =========================================================
@@ -164,7 +179,9 @@ function compactSegmentation(value, depth = 0) {
     }
 
     return value
-      .map((item) => compactSegmentation(item, depth + 1))
+      .map((item) =>
+        compactSegmentation(item, depth + 1)
+      )
       .filter((item) => item !== undefined);
   }
 
@@ -292,8 +309,13 @@ export async function requestInterventionProposal({
     }
   }
 
-  const compactContext = compactSegmentation(context ?? {});
-  const contextJSON = JSON.stringify(compactContext ?? {});
+  const compactContext = compactSegmentation(
+    context ?? {}
+  );
+
+  const contextJSON = JSON.stringify(
+    compactContext ?? {}
+  );
 
   if (contextJSON.length > 200_000) {
     throw new Error(
@@ -345,14 +367,28 @@ export async function generateConceptualAfter({
     );
   }
 
+  // El backend admite máximo 2000 caracteres en prompt.
+  const MAX_PROMPT_LENGTH = 2000;
+
+  const cleanPrompt = prompt
+    .replace(/\\n/g, "\n")
+    .trim()
+    .slice(0, MAX_PROMPT_LENGTH);
+
   const formData = new FormData();
 
   formData.append("file", file);
-  formData.append("prompt", prompt);
-  formData.append("negative_prompt", negativePrompt);
+  formData.append("prompt", cleanPrompt);
+  formData.append(
+    "negative_prompt",
+    String(negativePrompt || "").slice(0, 2000)
+  );
   formData.append("strength", String(strength));
   formData.append("steps", String(steps));
-  formData.append("guidance_scale", String(guidanceScale));
+  formData.append(
+    "guidance_scale",
+    String(guidanceScale)
+  );
 
   if (
     seed !== null &&
@@ -361,6 +397,11 @@ export async function generateConceptualAfter({
   ) {
     formData.append("seed", String(seed));
   }
+
+  console.log("Generando propuesta conceptual:", {
+    promptLength: cleanPrompt.length,
+    maxPromptLength: MAX_PROMPT_LENGTH
+  });
 
   return request(
     "/api/image-generation/generate",
@@ -402,31 +443,4 @@ export function getGeneratedImageUrl(imageUrl) {
   return `${baseUrl}${
     imageUrl.startsWith("/") ? "" : "/"
   }${imageUrl}`;
-}
-
-/* =========================================================
-   GENERACIÓN CONCEPTUAL LEGACY
-   Compatibilidad con llamadas anteriores.
-========================================================= */
-
-export async function generateConceptualAfterLegacy(
-  file,
-  prompt,
-  options = {}
-) {
-  return generateConceptualAfter({
-    file,
-    prompt,
-    negativePrompt:
-      options.negativePrompt ??
-      options.negative_prompt ??
-      "",
-    strength: options.strength ?? 0.65,
-    steps: options.steps ?? 30,
-    guidanceScale:
-      options.guidanceScale ??
-      options.guidance_scale ??
-      7.5,
-    seed: options.seed ?? null
-  });
 }

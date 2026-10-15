@@ -324,13 +324,69 @@ export default function BeforeAfterPanel() {
       return;
     }
 
-    const prompt =
+    // Construye un prompt breve a partir de las recomendaciones y acciones.
+    // El backend valida un máximo de 2000 caracteres para el campo "prompt".
+    const basePrompt = String(
       analysis?.image_generation_prompt ??
       analysis?.image_prompt ??
       analysis?.visual_prompt ??
-      "";
+      "Representación conceptual de una intervención urbana localizada basada en el diagnóstico."
+    ).trim();
 
-    const negativePrompt = analysis?.negative_prompt ?? "";
+    // Extrae solo la acción recomendada; omite justificaciones y fundamentos.
+    const extractAction = (item) => {
+      const raw =
+        typeof item === "string"
+          ? item
+          : item?.action ??
+            item?.title ??
+            item?.recommendation ??
+            item?.description ??
+            "";
+
+      return String(raw)
+        .split(/justificación\\s*:/i)[0]
+        .split(/justification\\s*:/i)[0]
+        .trim()
+        .replace(/^\\d+[.)]\\s*/, "");
+    };
+
+    const actionTexts = [
+      ...recommendations.map(extractAction),
+      ...interventionPlan.map(extractAction),
+    ].filter(Boolean);
+
+    // Evita duplicados sin alterar el orden de prioridad.
+    const uniqueActions = [...new Set(actionTexts)].slice(0, 6);
+    const actionInstructions = uniqueActions.length
+      ? uniqueActions.map((action, index) => `${index + 1}. ${action}`).join("\\n")
+      : "Aplicar únicamente las acciones de intervención explícitas en el diagnóstico.";
+
+    const fixedInstructions = [
+      "Representa las acciones recomendadas como intervenciones urbanas plausibles y localizadas.",
+      "Conserva perspectiva, calles, edificios y distribución espacial originales.",
+      "No agregues elementos decorativos ni intervenciones no respaldadas por las recomendaciones.",
+      "Propuesta conceptual; no representa una obra ejecutada.",
+    ].join("\\n");
+
+    // Reservar espacio para las acciones y las reglas; recortar la descripción base
+    // antes que eliminar las recomendaciones.
+    const actionBlock = `ACCIONES RECOMENDADAS (sin justificaciones):\\n${actionInstructions}`;
+    const suffix = `\\n\\n${actionBlock}\\n\\n${fixedInstructions}`;
+    const availableBaseLength = Math.max(
+      0,
+      2000 - suffix.length
+    );
+    const compactBase = basePrompt.slice(0, availableBaseLength).trim();
+    const prompt = `${compactBase}${suffix}`.trim().slice(0, 2000);
+
+    const backendNegativePrompt = analysis?.negative_prompt ?? "";
+    const negativePrompt = [
+      backendNegativePrompt,
+      "generic tree planting, excessive trees, forest, decorative greenery, unrelated landscaping, invented interventions, redesigning the whole street, changing camera angle, changing building locations, unrealistic urban layout",
+    ]
+      .filter(Boolean)
+      .join(", ");
 
     if (!String(prompt).trim()) {
       setError(

@@ -1,708 +1,248 @@
+
 import {
   AlertTriangle,
-  Clock3,
   Leaf,
   Target,
-  ClipboardCheck,
   Info,
-  ListChecks,
+  Trees,
+  Sun,
+  Layers,
+  Droplets,
+  Thermometer,
+  Network,
+  ArrowDownRight,
+  Sparkles,
 } from "lucide-react";
 
-
-/* =========================================================
-   FORMATEAR VALORES
-========================================================= */
-
-function formatValue(
-  value,
-  decimals = 3
-) {
-
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
-    return "—";
+function formatLabel(value) {
+  if (value === null || value === undefined || value === "") {
+    return "No disponible";
   }
 
-
-  if (
-    typeof value === "number"
-  ) {
-
-    return value.toFixed(
-      decimals
-    );
-
-  }
-
-
-  return String(value);
-
-}
-
-
-/* =========================================================
-   FORMATEAR TEXTO DEL MOTOR
-========================================================= */
-
-function formatLabel(
-  value
-) {
-
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
-
-    return "—";
-
-  }
-
-
-  return String(
-    value
-  )
-    .replaceAll(
-      "_",
-      " "
-    )
+  return String(value)
+    .replaceAll("_", " ")
     .toLowerCase()
-    .replace(
-      /^./,
-      (character) =>
-        character.toUpperCase()
-    );
-
+    .replace(/^./, (c) => c.toUpperCase());
 }
 
+function getLevelClass(level) {
+  const normalized = String(level ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
 
-/* =========================================================
-   FORMATEAR TEXTO LARGO
-========================================================= */
+  if (normalized.includes("CRIT")) return "critical";
+  if (normalized.includes("ALT")) return "high";
+  if (normalized.includes("MED")) return "medium";
+  return "default";
+}
 
-function formatText(
-  value
-) {
+function getActionVisual(action) {
+  const text = action.toLowerCase();
+
+  if (text.includes("arbor") || text.includes("veget")) {
+    return { Icon: Trees, color: "green", label: "Vegetación" };
+  }
+
+  if (text.includes("sombra")) {
+    return { Icon: Sun, color: "amber", label: "Confort térmico" };
+  }
+
+  if (text.includes("permeab") || text.includes("agua")) {
+    return { Icon: Droplets, color: "blue", label: "Agua y suelo" };
+  }
 
   if (
-    value === null ||
-    value === undefined ||
-    value === ""
+    text.includes("térmic") ||
+    text.includes("termic") ||
+    text.includes("absorción")
   ) {
-
-    return "—";
-
+    return {
+      Icon: Thermometer,
+      color: "orange",
+      label: "Mitigación térmica",
+    };
   }
 
-
-  return String(value);
-
-}
-
-
-/* =========================================================
-   CLASE SEGÚN NIVEL
-========================================================= */
-
-function getLevelClass(
-  level
-) {
-
-  switch (
-    String(level)
-      .toUpperCase()
-  ) {
-
-    case "CRITICA":
-      return "critical";
-
-    case "ALTA":
-      return "high";
-
-    case "MEDIA":
-      return "medium";
-
-    default:
-      return "default";
-
+  if (text.includes("monitoreo") || text.includes("seguimiento")) {
+    return {
+      Icon: Layers,
+      color: "purple",
+      label: "Seguimiento",
+    };
   }
 
+  if (text.includes("coordinación") || text.includes("multisectorial")) {
+    return {
+      Icon: Network,
+      color: "teal",
+      label: "Gestión urbana",
+    };
+  }
+
+  return { Icon: Leaf, color: "green", label: "Intervención urbana" };
 }
 
+function getReasonTags(reason) {
+  if (!reason || reason === "—") return [];
 
-/* =========================================================
-   COMPONENTE
-========================================================= */
+  return String(reason)
+    .split(/[;|,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => item.replace(/^[-•]\s*/, ""));
+}
 
-export default function InterventionRecommendation({
-  zone,
-}) {
-
-
-  /* =======================================================
-     SIN ZONA
-  ======================================================== */
-
+export default function InterventionRecommendation({ zone }) {
   if (!zone) {
-
     return (
-
-      <section className="intervention-recommendation">
-
-        <div className="intervention-empty">
-
-          <Target
-            size={22}
-          />
-
+      <section className="intervention-recommendation ir-visual">
+        <div className="ir-empty">
+          <Target size={28} />
           <div>
-
-            <strong>
-              Selecciona una zona
-            </strong>
-
-            <p>
-              Selecciona una zona en el
-              mapa o en el ranking para
-              consultar su intervención.
-            </p>
-
+            <strong>Selecciona una zona</strong>
+            <p>Consulta las acciones recomendadas para esa zona.</p>
           </div>
-
         </div>
-
       </section>
-
     );
-
   }
 
-
-  /* =======================================================
-     PROPIEDADES
-  ======================================================== */
-
-  const properties =
-    zone?.properties || {};
-
-
-  const zoneId =
-    properties.zone_id ??
-    "—";
+  const p = zone.properties || {};
+  const zoneId = p.zone_id ?? "Zona seleccionada";
+  const level = p.intervention_level ?? "Sin clasificar";
+  const condition = p.dominant_condition;
+  const recommendation = p.recommendation ?? "";
+  const objective = p.intervention_objective ?? "";
+  const reason = p.priority_reason ?? "";
+  const actionPackage = p.action_package ?? "";
 
 
-  const level =
-    properties.intervention_level ??
-    "—";
+  const actions = String(actionPackage)
+    .split(/[|;\n]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 
+  const reasons = getReasonTags(reason);
 
-  const interventionType =
-    properties.intervention_type ??
-    "—";
-
-
-  const condition =
-    properties.dominant_condition ??
-    "—";
-
-
-  const timeframe =
-    properties.priority_timeframe ??
-    "—";
-
-
-  /* =======================================================
-     RECOMENDACIONES GENERADAS POR EL MOTOR
-  ======================================================== */
-
-  const recommendation =
-    properties.recommendation ??
-    "—";
-
-
-  const interventionObjective =
-    properties.intervention_objective ??
-    "—";
-
-
-  const priorityReason =
-    properties.priority_reason ??
-    "—";
-
-
-  const actionPackage =
-    properties.action_package ??
-    "—";
-
-
-  const monitoringIndicator =
-    properties.monitoring_indicator ??
-    "—";
-
-
-  /* =======================================================
-     INDICADORES
-  ======================================================== */
-
-  const operationalScore =
-    properties.operational_score;
-
-
-  const hotspotScore =
-    properties.hotspot_score;
-
-
-  const probability =
-    properties.mean_probability;
-
-
-  const rank =
-    properties.operational_rank;
-
-
-  /* =======================================================
-     ACCIONES DEL PAQUETE
-     
-     El motor entrega action_package como una cadena
-     separada por "|".
-  ======================================================== */
-
-  const actionItems =
-    String(actionPackage)
-      .split("|")
-      .map(
-        (action) =>
-          action.trim()
-      )
-      .filter(
-        (action) =>
-          action.length > 0
-      );
-
-
-  /* =======================================================
-     RENDER
-  ======================================================== */
+  // Evita mostrar la segunda oración si solo repite la estrategia.
+  const mainRecommendation = String(recommendation)
+    .split(/\.\s+(?=[A-ZÁÉÍÓÚ])/)[0]
+    .trim()
+    .replace(/[.!]+$/, "");
 
   return (
-
-    <section className="intervention-recommendation">
-
-
-      {/* ===================================================
-          HEADER
-      ==================================================== */}
-
-      <div className="intervention-recommendation-header">
-
+    <section className="intervention-recommendation ir-visual">
+      <header className="ir-header">
         <div>
-
-          <p className="section-label">
-            INTERVENCIÓN
-          </p>
-
-
-          <h2>
-            Recomendación para {zoneId}
-          </h2>
-
-
-          <p className="intervention-description">
-
-            Propuesta de intervención generada
-            por el motor de análisis urbano a
-            partir de las condiciones e
-            indicadores de la zona.
-
-          </p>
-
+          <div className="ir-eyebrow">
+            <Sparkles size={14} />
+            PLAN DE INTERVENCIÓN
+          </div>
+          <h2>{zoneId}</h2>
+        
         </div>
 
+        <div className={`ir-priority ${getLevelClass(level)}`}>
+          <AlertTriangle size={16} />
+          <span>{formatLabel(level)}</span>
+        </div>
+      </header>
 
-        <div
-          className={`
-            intervention-level
-            ${getLevelClass(level)}
-          `}
-        >
-
-          <AlertTriangle
-            size={16}
-          />
-
-          <span>
-            {formatLabel(level)}
-          </span>
-
+      <section className="ir-recommendation">
+        <div className="ir-recommendation-top">
+          <div className="ir-recommendation-icon">
+            <Leaf size={29} />
+          </div>
+          <div>
+            <span className="ir-overline">ESTRATEGIA RECOMENDADA</span>
+            <h3>{mainRecommendation || "Intervención urbana"}</h3>
+          </div>
         </div>
 
-      </div>
+        {condition && (
+          <div className="ir-condition">
+            <span>Condición detectada</span>
+            <strong>{formatLabel(condition)}</strong>
+          </div>
+        )}
+      </section>
 
-
-      {/* ===================================================
-          RECOMENDACIÓN PRINCIPAL
-      ==================================================== */}
-
-      <div className="intervention-main-card">
-
-        <div className="intervention-main-icon">
-
-          <Leaf
-            size={24}
-          />
-
+      <section className="ir-objective">
+        <div className="ir-section-icon objective">
+          <Target size={21} />
         </div>
-
-
         <div>
+          <span className="ir-overline">OBJETIVO</span>
+          <p>{objective || "No hay un objetivo disponible para esta zona."}</p>
+        </div>
+      </section>
 
-          <span className="intervention-main-label">
+      {reasons.length > 0 && (
+        <section className="ir-reasons">
+          <div className="ir-section-heading">
+            <div className="ir-section-icon reason">
+              <Info size={20} />
+            </div>
+            <div>
+              <h3>¿Por qué intervenir aquí?</h3>
+              <p>Factores identificados en esta zona</p>
+            </div>
+          </div>
 
-            Recomendación de intervención
+          <div className="ir-reason-tags">
+            {reasons.map((item, index) => (
+              <span className="ir-reason-tag" key={`${item}-${index}`}>
+                <ArrowDownRight size={14} />
+                {formatLabel(item)}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
 
-          </span>
-
-
-          <strong className="intervention-main-title">
-
-            {formatText(
-              recommendation
-            )}
-
-          </strong>
-
-
-          <p>
-
-            La recomendación corresponde
-            a una zona con condición dominante
-            de{" "}
-
-            <strong>
-              {formatLabel(
-                condition
-              )}
-            </strong>
-
-            {" "}y tipo de intervención{" "}
-
-            <strong>
-              {formatLabel(
-                interventionType
-              )}
-            </strong>.
-
-          </p>
-
+      <section className="ir-actions">
+        <div className="ir-section-heading">
+          <div className="ir-section-icon actions">
+            <Layers size={20} />
+          </div>
+          <div>
+            <h3>Acciones propuestas</h3>
+            <p>Medidas que pueden formar parte de la intervención</p>
+          </div>
+          <span className="ir-action-count">{actions.length}</span>
         </div>
 
-      </div>
+        <div className="ir-action-grid">
+          {actions.map((action, index) => {
+            const visual = getActionVisual(action);
+            const Icon = visual.Icon;
 
-
-      {/* ===================================================
-          OBJETIVO
-      ==================================================== */}
-
-      <div className="intervention-detail-card">
-
-        <div className="intervention-detail-icon">
-
-          <Target
-            size={18}
-          />
-
-        </div>
-
-
-        <div>
-
-          <span className="intervention-detail-label">
-
-            Objetivo de intervención
-
-          </span>
-
-
-          <p className="intervention-detail-text">
-
-            {formatText(
-              interventionObjective
-            )}
-
-          </p>
-
-        </div>
-
-      </div>
-
-
-      {/* ===================================================
-          JUSTIFICACIÓN DE PRIORIDAD
-      ==================================================== */}
-
-      <div className="intervention-detail-card">
-
-        <div className="intervention-detail-icon">
-
-          <Info
-            size={18}
-          />
-
-        </div>
-
-
-        <div>
-
-          <span className="intervention-detail-label">
-
-            Razón de prioridad
-
-          </span>
-
-
-          <p className="intervention-detail-text">
-
-            {formatText(
-              priorityReason
-            )}
-
-          </p>
-
-        </div>
-
-      </div>
-
-
-      {/* ===================================================
-          PAQUETE DE ACCIÓN
-      ==================================================== */}
-
-      <div className="intervention-action-card">
-
-        <div className="intervention-action-header">
-
-          <ListChecks
-            size={18}
-          />
-
-          <span>
-            Paquete de acción
-          </span>
-
-        </div>
-
-
-        <div className="intervention-action-list">
-
-          {actionItems.length > 0 ? (
-
-            actionItems.map(
-              (
-                action,
-                index
-              ) => (
-
-                <div
-                  className="intervention-action-item"
-                  key={`${action}-${index}`}
-                >
-
-                  <span className="intervention-action-number">
-
-                    {index + 1}
-
+            return (
+              <article
+                className={`ir-action-card ${visual.color}`}
+                key={`${action}-${index}`}
+              >
+                <div className="ir-action-card-top">
+                  <div className="ir-action-icon">
+                    <Icon size={25} strokeWidth={1.8} />
+                  </div>
+                  <span className="ir-action-index">
+                    {String(index + 1).padStart(2, "0")}
                   </span>
-
-
-                  <span className="intervention-action-item-text">
-
-                    {action}
-
-                  </span>
-
                 </div>
 
-              )
-            )
-
-          ) : (
-
-            <p className="intervention-action-text">
-
-              No hay acciones disponibles
-              para esta zona.
-
-            </p>
-
-          )}
-
+                <span className="ir-action-category">
+                  {visual.label}
+                </span>
+                <h4>{formatLabel(action)}</h4>
+              </article>
+            );
+          })}
         </div>
+      </section>
 
-      </div>
-
-
-      {/* ===================================================
-          INDICADOR DE SEGUIMIENTO
-      ==================================================== */}
-
-      <div className="intervention-detail-card">
-
-        <div className="intervention-detail-icon">
-
-          <ClipboardCheck
-            size={18}
-          />
-
-        </div>
-
-
-        <div>
-
-          <span className="intervention-detail-label">
-
-            Indicador de seguimiento
-
-          </span>
-
-
-          <p className="intervention-detail-text">
-
-            {formatText(
-              monitoringIndicator
-            )}
-
-          </p>
-
-        </div>
-
-      </div>
-
-
-      {/* ===================================================
-          INDICADORES DEL MOTOR
-      ==================================================== */}
-
-      <div className="intervention-metrics">
-
-
-        <div className="intervention-metric">
-
-          <span>
-            Ranking
-          </span>
-
-
-          <strong>
-            {formatValue(
-              rank,
-              0
-            )}
-          </strong>
-
-        </div>
-
-
-        <div className="intervention-metric">
-
-          <span>
-            Operational
-          </span>
-
-
-          <strong>
-            {formatValue(
-              operationalScore
-            )}
-          </strong>
-
-        </div>
-
-
-        <div className="intervention-metric">
-
-          <span>
-            Hotspot
-          </span>
-
-
-          <strong>
-            {formatValue(
-              hotspotScore
-            )}
-          </strong>
-
-        </div>
-
-
-        <div className="intervention-metric">
-
-          <span>
-            Probabilidad
-          </span>
-
-
-          <strong>
-            {formatValue(
-              probability
-            )}
-          </strong>
-
-        </div>
-
-      </div>
-
-
-      {/* ===================================================
-          PLAZO
-      ==================================================== */}
-
-      <div className="intervention-timeframe">
-
-        <Clock3
-          size={18}
-        />
-
-
-        <div>
-
-          <span>
-            Horizonte de prioridad
-          </span>
-
-
-          <strong>
-            {formatLabel(
-              timeframe
-            )}
-          </strong>
-
-        </div>
-
-      </div>
-
-
-      {/* ===================================================
-          FUENTE
-      ==================================================== */}
-
-      <div className="intervention-footer">
-
-        <span>
-
-          Esta recomendación utiliza los
-          atributos producidos por el motor
-          de análisis urbano para la zona
-          seleccionada.
-
-        </span>
-
-      </div>
-
+   
     </section>
-
   );
-
 }
