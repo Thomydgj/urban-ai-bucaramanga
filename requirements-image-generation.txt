@@ -1,9 +1,6 @@
-# Dependencias del servicio de generación de imágenes
-diffusers==0.41.0
-accelerate==1.15.0
-safetensors
-transformers==5.19.0
-Pillow
-fastapi
-uvicorn[standard]
-python-multipart
+fastapi==0.142.2
+uvicorn[standard]==0.54.0
+python-dotenv==1.2.4
+python-multipart==0.0.32
+openai==3.27.0
+Pillow==12.3.0

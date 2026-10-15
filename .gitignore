@@ -46,3 +46,9 @@ temp/
 data/raw/*
 data/interim/*
 data/processed/*
+
+# Small processed layer required by the deployed API.
+!data/processed/
+!data/processed/modeling/
+data/processed/modeling/*
+!data/processed/modeling/urban_ai_master_intervention.gpkg

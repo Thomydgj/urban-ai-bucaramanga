@@ -1,4 +1,5 @@
 
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -29,6 +30,24 @@ app = FastAPI(
     version="1.0.0",
 )
 
+DEFAULT_CORS_ORIGINS = (
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "https://urban-ai-bucaramanga.vercel.app",
+)
+configured_origins = os.getenv("CORS_ORIGINS")
+cors_origins = (
+    [
+        origin.strip().rstrip("/")
+        for origin in configured_origins.split(",")
+        if origin.strip()
+    ]
+    if configured_origins is not None
+    else list(DEFAULT_CORS_ORIGINS)
+)
+
 
 # =========================================================
 # CORS
@@ -36,13 +55,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-        "https://urban-ai-bucaramanga.vercel.app"
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

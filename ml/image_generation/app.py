@@ -2,15 +2,22 @@ from __future__ import annotations
 
 import io
 import logging
+import os
 from pathlib import Path
 
-import torch
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from PIL import Image, UnidentifiedImageError
+from dotenv import load_dotenv
 
-from engine import OUTPUT_DIR, generate_image, get_device
+if __package__:
+    from .engine import OUTPUT_DIR, generate_image, get_device
+else:
+    from engine import OUTPUT_DIR, generate_image, get_device
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(PROJECT_ROOT / ".env")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,14 +31,27 @@ app = FastAPI(
     version="1.1.0",
 )
 
+DEFAULT_CORS_ORIGINS = (
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://urban-ai-bucaramanga.vercel.app",
+)
+configured_origins = os.getenv("CORS_ORIGINS")
+cors_origins = (
+    [
+        origin.strip().rstrip("/")
+        for origin in configured_origins.split(",")
+        if origin.strip()
+    ]
+    if configured_origins is not None
+    else list(DEFAULT_CORS_ORIGINS)
+)
+
 # Permite que el frontend local consuma esta API desde cualquiera de los
 # dos orígenes habituales de Vite. No usar "*" junto con credenciales.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -134,7 +154,7 @@ async def generate(
                 detail="El generador no devolvió el nombre del archivo generado.",
             )
 
-        # Construir la URL con la base real de esta petición (puerto 8001).
+        # Construir la URL con el host y esquema de esta petición.
         image_url = str(
             request.url_for("get_generated_image", filename=filename)
         )
@@ -152,18 +172,6 @@ async def generate(
 
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-    except torch.cuda.OutOfMemoryError as exc:
-        logger.exception("Memoria GPU insuficiente.")
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "La GPU no tiene memoria suficiente para esta generación. "
-                "Intenta nuevamente con una imagen más pequeña."
-            ),
-        ) from exc
 
     except Exception as exc:
         logger.exception("Error inesperado en el endpoint de generación.")
